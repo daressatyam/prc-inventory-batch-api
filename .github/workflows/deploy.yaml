@@ -3,14 +3,15 @@ name: Deploy to CloudHub 2.0
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: sandbox
 
-    # Pin Maven and Java to avoid Maven Resolver API incompatibility
     container:
       image: maven:3.9.9-eclipse-temurin-17
 
@@ -24,9 +25,14 @@ jobs:
           java -version
 
       - name: Build and deploy to CloudHub 2.0
-        run: >
-          mvn -B clean deploy -DmuleDeploy
-          -Danypoint.client.id="${{ secrets.ANYPOINT_CLIENT_ID }}"
-          -Danypoint.client.secret="${{ secrets.ANYPOINT_CLIENT_SECRET }}"
-          -Dmule.encryptionKey="${{ secrets.MULE_KEY }}"
-          -Dmule.env="${{secrets.SANDBOX}}"
+        env:
+          ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
+          ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+          MULE_KEY: ${{ secrets.MULE_KEY }}
+          MULE_ENV: ${{ secrets.SANDBOX }}
+        run: |
+          mvn -B clean deploy -DmuleDeploy \
+            "-Danypoint.client.id=${ANYPOINT_CLIENT_ID}" \
+            "-Danypoint.client.secret=${ANYPOINT_CLIENT_SECRET}" \
+            "-Dmule.encryptionKey=${MULE_KEY}" \
+            "-Dmule.env=${MULE_ENV}"
