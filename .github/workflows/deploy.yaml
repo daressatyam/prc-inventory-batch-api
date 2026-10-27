@@ -28,4 +28,5 @@ jobs:
           mvn -B clean deploy -DmuleDeploy
           -Danypoint.client.id="${{ secrets.ANYPOINT_CLIENT_ID }}"
           -Danypoint.client.secret="${{ secrets.ANYPOINT_CLIENT_SECRET }}"
-          -Dmule.key="${{ secrets.MULE_KEY }}"
+          -Dmule.encryptionKey="${{ secrets.MULE_KEY }}"
+          -Dmule.env="${{secrets.SANDBOX}}"
