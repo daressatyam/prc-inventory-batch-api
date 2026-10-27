@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="3c3d5292-8525-4a07-815f-2e4e18a5dbde" >
+		<sftp:connection host="${SFTP.host}" port="${SFTP.port}" username="${SFTP.username}" connectionTimeout="30" responseTimeout="60" identityFile="${SFTP.certificate.path}" passphrase="${SFTP.certificate.passphrase}">
+			<reconnection >
+				<reconnect blocking="false" />
+			</reconnection>
+			<pooling-profile maxActive="10" maxIdle="4" maxWait="30000"/>
+		</sftp:connection>
+	</sftp:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="a87d4ca7-2ee0-47da-ac22-176bdb9be19d" file="config/config.${mule.env}.yaml" />
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="2e4b86df-7bb2-4653-bc2e-5faca355685a" >
+		<email:smtp-connection host="${email.smtp.host}" port="${email.smtp.port}" user="${email.smtp.username}" password="${secure::email.smtp.password}" >
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="540b2096-9fa7-4ef8-a73e-9fe2f95e9bc8" file="secureConfig/secure.config.${mule.env}.yaml" key="${mule.encryptionKey}" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="56340ecb-ef98-4bba-ad17-605d31efa313" maxEntries="1000" entryTtl="48" expirationInterval="60" />
+	<configuration-properties doc:name="Configuration properties" doc:id="75e9e806-a4fb-48ae-937a-c9c045379a48" file="config/common.config.yaml" />
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="2ca1d942-c2be-4edd-afd9-31f0a5189312" sendCorrelationId="ALWAYS">
+		<vm:queues >
+			<vm:queue queueName="alertMail" queueType="PERSISTENT" maxOutstandingMessages="10" />
+		</vm:queues>
+	</vm:config>
+</mule>
