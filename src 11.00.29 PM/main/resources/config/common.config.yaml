@@ -25,3 +25,5 @@ objectStore:
     entry: "1000"
   ttl: "48"
   expiration: "60"
+http:
+  port: "8081"
