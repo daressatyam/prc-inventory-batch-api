@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	<error-handler name="global-error-handlingError_Handler" doc:id="d269d4e0-53fe-4d80-b662-3f82a22785ca" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="sftp file not found" doc:id="0de76ab4-2a79-48f6-9a82-95f3934269fc" type="SFTP:ILLEGAL_PATH">
+			<ee:transform doc:name="error payload" doc:id="51ca7b24-0a37-4912-aa1c-1abfbdaf9aee" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    traceId:      vars.traceId,
+    errorType:    "INV:INBOUND_FILE_NOT_FOUND",
+    errorMessage: "Inbound file not found: " ++ (p('SFTP.wmssftp.path') default "") ++ (vars.inboundFileName default ""),
+    env:          p('app.env'),
+    timestamp:    now() as String
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<logger level="ERROR" doc:name="LOGERROR: INBOUND_FILE_NOT_FOUND" doc:id="97b3dd12-1f89-4000-a8fa-89053d6d3fc2" message="#[payload]"/>
+			<flow-ref doc:name="publish-error-message-to-vm" doc:id="3265b1a1-c150-46f0-82c5-c6f42acfc281" name="publish-error-message"/>
+			<flow-ref doc:name="delete-error-folder-outbound-sftp" doc:id="3a1473df-5720-494e-abe8-cc8cf0dfbbb2" name="delete-error-folder-outbound-sftp" />
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="SFTP connectivity" doc:id="0cadda08-319f-4d16-8819-777480f18f40" type="SFTP:CONNECTIVITY, SFTP:CONNECTION_TIMEOUT" >
+			<ee:transform doc:name="error payload" doc:id="972ae872-12fc-4914-a044-4d155ed88b6a" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    traceId:      vars.traceId,
+    errorType:    "INV:SFTP_RETRY_EXHAUSTED",
+    errorMessage: "SFTP failed: " ++ error.description,
+    env:          p('app.env'),
+    timestamp:    now() as String
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<logger level="ERROR" doc:name="LOGERROR: SFTP_RETRY_EXHAUSTED" doc:id="795f1a44-c908-42a0-b8d3-6fdd114f72cc" message="#[payload]" />
+			<flow-ref doc:name="publish-error-message-to-vm" doc:id="c62565c9-eb49-430b-8494-087065757370" name="publish-error-message" />
+			<flow-ref doc:name="delete-error-folder-outbound-sftp" doc:id="a641546d-dd99-45b8-b1bd-ef3b656f4bf9" name="delete-error-folder-outbound-sftp" />
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="SFTP connectivity1" doc:id="9885fb31-94c6-4fd7-a737-85e6847aa431" type="ANY" >
+			<ee:transform doc:name="error payload" doc:id="5860aed5-8970-4947-82cd-561e8404273d" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    traceId:      vars.traceId,
+    errorType:    "INV:RUNTIME_ERROR",
+    errorMessage: error.description,
+    env:          p('app.env'),
+    timestamp:    now() as String
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<logger level="ERROR" doc:name="LOGERROR: SFTP_RUNTIME_ERROR" doc:id="537bcd29-cbad-46e9-94eb-340e0a9b80b8" message="#[payload]" />
+			<flow-ref doc:name="publish-error-message-to-vm" doc:id="8d13876c-3d29-4b2e-b32b-cc715b262ee0" name="publish-error-message" />
+			<flow-ref doc:name="delete-error-folder-outbound-sftp" doc:id="7ff3ea1b-dd94-468e-9125-64473209c408" name="delete-error-folder-outbound-sftp" />
+		</on-error-propagate>
+	</error-handler>
+	<error-handler name="global-error-handling-continue-store-error" doc:id="4d5becd6-009a-4b39-884b-1c9b38aea915" >
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="15227e99-e27a-4270-bc43-17ba15699e52" type="ANY">
+			<ee:transform doc:name="error payload" doc:id="22394695-28ec-4ae2-b832-285361d44bd4" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    traceId:      vars.traceId,
+    errorType:    "INV:SFTP_OUTBOUND_FAILED",
+    errorMessage: error.description
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="errorPath" ><![CDATA[%dw 2.0
+output application/java
+---
+p('SFTP.errorsftp.path') ++ (now() as String {format: 'dd-MM-yyyy'}) ++ "/" ++ p('file.errorFile') ++ now() as String {format: "dd-MM-yyyy"} ++ p('file.format')]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<flow-ref doc:name="update-error-daia-outbound-error-sftp-sub-flow" doc:id="dfc8f9e3-da3d-48cc-afd6-40681fa9385a" name="update-error-daia-outbound-error-sftp-sub-flow" />
+		</on-error-continue>
+	</error-handler>
+	<error-handler name="global-error-handlingError_Handler-continue" doc:id="36a2a083-778f-479b-9444-3c75cbfa51d6" >
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ab9f3ecb-5423-43ff-b897-fc148b4922ae" type="ANY" >
+			<ee:transform doc:name="error payload" doc:id="f11cb540-d563-47da-bae2-b70375fe7bce" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    traceId:      vars.traceId,
+    errorType:    "INV:SFTP_OUTBOUND_FAILED",
+    errorMessage: error.description
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="errorPath" ><![CDATA[%dw 2.0
+output application/java
+---
+p('SFTP.errorsftp.path') ++ (now() as String {format: 'dd-MM-yyyy'}) ++ "/" ++ p('file.errorFile') ++ now() as String {format: "dd-MM-yyyy"} ++ p('file.format')]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<logger level="ERROR" doc:name="LOGERROR:SFTP_OUTBOUND_FAILED" doc:id="c7c7c41f-8fd8-4952-803b-952f617768cf" message="#[payload]"/>
+		</on-error-continue>
+	</error-handler>
+	<sub-flow name="publish-error-message" doc:id="224d13b6-c4ef-440d-89bf-b1849c57d3ce">
+		<ee:transform doc:name="set critical error message" doc:id="9b6102d0-c08f-44f3-8103-4fbb42db8844">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import rightPad from dw::core::Strings
+output text/plain
+
+fun row(label: String, value: Any): String =
+    "  " ++ rightPad(label, 14) ++ ": " ++ ((value default "N/A") as String) ++ "\n"
+---
+"PRC Inventory Batch API — Critical Failure\n\n"
+++ "Status : FAILED - PROCESSING ABORTED\n"
+++ "--------------------------------------------\n"
+++ row("Environment", upper(payload.env))
+++ row("Trace ID", payload.traceId)
+++ row("Timestamp", payload.timestamp)
+++ "\n"
+++ row("Error Type", payload.errorType)
+++ row("Error Message", payload.errorMessage)
+++ "--------------------------------------------\n\n"
+++ "Action Required: The batch did not complete. Please check the application logs using the Trace ID above and reprocess the file once the issue is resolved.\n\n"
+++ "Regards,\nPRC Inventory Batch API\n"
+++ "(Automated message. Please do not reply.)"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="send-critical-alert-mail-sub-flow" doc:id="926567f7-e495-4d74-bf0d-6127f1193710" name="send-critical-alert-mail-sub-flow" />
+	</sub-flow>
+</mule>
