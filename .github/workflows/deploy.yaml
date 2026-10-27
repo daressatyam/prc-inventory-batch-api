@@ -34,58 +34,90 @@ jobs:
           MULE_KEY: ${{ secrets.MULE_KEY }}
         shell: bash
         run: |
+          set -eu
+
           test -n "$ANYPOINT_CLIENT_ID" || {
-            echo "Missing ANYPOINT_CLIENT_ID"
+            echo "::error::Missing ANYPOINT_CLIENT_ID"
             exit 1
           }
 
           test -n "$ANYPOINT_CLIENT_SECRET" || {
-            echo "Missing ANYPOINT_CLIENT_SECRET"
+            echo "::error::Missing ANYPOINT_CLIENT_SECRET"
             exit 1
           }
 
           test -n "$MULE_KEY" || {
-            echo "Missing MULE_KEY"
+            echo "::error::Missing MULE_KEY"
             exit 1
           }
 
           echo "Required secrets are present."
 
-      # 4. Create Maven settings.xml
+      # 4. Create Maven settings.xml securely
       - name: Configure Maven settings
         env:
           ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
           ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+          MULE_REPO_USERNAME: ${{ secrets.MULE_REPO_USERNAME }}
+          MULE_REPO_PASSWORD: ${{ secrets.MULE_REPO_PASSWORD }}
         shell: bash
         run: |
-          cat > "$GITHUB_WORKSPACE/settings.xml" <<'EOF'
-          <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
-            <servers>
-              <server>
-                <id>mulesoft-private</id>
-                <username>~~~Client~~~</username>
-                <password>${env.ANYPOINT_CLIENT_ID}~?${env.ANYPOINT_CLIENT_SECRET}</password>
-              </server>
-              <server>
-                <id>Repository</id>
-                <username>~~~Client~~~</username>
-                <password>${env.ANYPOINT_CLIENT_ID}~?${env.ANYPOINT_CLIENT_SECRET}</password>
-              </server>
-            </servers>
-          </settings>
-          EOF
+          set -eu
+          umask 077
 
-          test -s "$GITHUB_WORKSPACE/settings.xml"
-          echo "Maven settings.xml created successfully."
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
 
-      # 5. Verify effective Maven settings without printing credentials
+          settings = ET.Element(
+              "settings",
+              {"xmlns": "http://maven.apache.org/SETTINGS/1.2.0"}
+          )
+          servers = ET.SubElement(settings, "servers")
+
+          def add_server(server_id, username, password):
+              server = ET.SubElement(servers, "server")
+              ET.SubElement(server, "id").text = server_id
+              ET.SubElement(server, "username").text = username
+              ET.SubElement(server, "password").text = password
+
+          client_id = os.environ["ANYPOINT_CLIENT_ID"]
+          client_secret = os.environ["ANYPOINT_CLIENT_SECRET"]
+
+          add_server(
+              "Repository",
+              "~~~Client~~~",
+              f"{client_id}~?~{client_secret}"
+          )
+
+          repo_username = os.environ.get("MULE_REPO_USERNAME", "")
+          repo_password = os.environ.get("MULE_REPO_PASSWORD", "")
+
+          if repo_username and repo_password:
+              add_server(
+                  "mulesoft-private",
+                  repo_username,
+                  repo_password
+              )
+
+          ET.indent(settings, space="  ")
+          ET.ElementTree(settings).write(
+              os.path.join(
+                  os.environ["GITHUB_WORKSPACE"],
+                  "settings.xml"
+              ),
+              encoding="utf-8",
+              xml_declaration=True
+          )
+
+          print("Maven settings created.")
+          PY
+
+      # 5. Verify Maven configuration
       - name: Verify Maven settings
-        env:
-          ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
-          ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
-        shell: bash
         run: |
-          mvn -B -s "$GITHUB_WORKSPACE/settings.xml" \
+          mvn -B \
+            -s "$GITHUB_WORKSPACE/settings.xml" \
             help:effective-settings \
             -DshowPasswords=false \
             -Doutput="$GITHUB_WORKSPACE/effective-settings.xml"
@@ -93,14 +125,16 @@ jobs:
           test -s "$GITHUB_WORKSPACE/effective-settings.xml"
           echo "Effective Maven settings generated."
 
-      # 6. Build, run MUnit tests and deploy
-      - name: Build and deploy to CloudHub 2.0
+      # 6. Build, run MUnit tests, and deploy
+      - name: Build, test and deploy to CloudHub 2.0
         env:
           ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
           ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
           MULE_KEY: ${{ secrets.MULE_KEY }}
         shell: bash
         run: |
+          set -eu
+
           mvn -B \
             -s "$GITHUB_WORKSPACE/settings.xml" \
             clean deploy \
