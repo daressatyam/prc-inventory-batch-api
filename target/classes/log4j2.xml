@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration status="WARN">
+
+    <Appenders>
+
+        <!-- Rolling application log file: keep all application logs -->
+        <RollingFile
+            name="file"
+            fileName="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}prc-inventory-batch-api.log"
+            filePattern="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}prc-inventory-batch-api-%i.log">
+
+            <PatternLayout
+                pattern="%-5p %d [%t] [processor: %X{processorPath}; event: %X{correlationId}] %c: %m%n"/>
+
+            <SizeBasedTriggeringPolicy size="10 MB"/>
+            <DefaultRolloverStrategy max="10"/>
+
+        </RollingFile>
+
+        <!-- Console appender: filter selected noisy messages -->
+        <Console name="Console" target="SYSTEM_OUT">
+
+            <Filters>
+
+                <!-- 1. Batch scheduler throttling warnings -->
+                <RegexFilter
+                    regex="(?s).*Task throttled back.*"
+                    onMatch="DENY"
+                    onMismatch="NEUTRAL"/>
+
+                <!-- 2. Batch dispatcher wrap-up messages -->
+                <RegexFilter
+                    regex="(?s).*Exception wrapping up execution.*BatchRecordDispatcherDelegate.*"
+                    onMatch="DENY"
+                    onMismatch="NEUTRAL"/>
+
+                <!-- 3. SSH client messages when the thread name is included -->
+                <RegexFilter
+                    regex="(?s).*sshd-SshClient.*"
+                    onMatch="DENY"
+                    onMismatch="NEUTRAL"/>
+
+            </Filters>
+
+            <PatternLayout
+                pattern="%-5p %d [%t] [processor: %X{processorPath}; event: %X{correlationId}] %c: %m%n"/>
+
+        </Console>
+
+    </Appenders>
+
+    <Loggers>
+
+        <!-- Mule application Logger component -->
+        <AsyncLogger
+            name="org.mule.runtime.core.internal.processor.LoggerMessageProcessor"
+            level="INFO"/>
+
+        <!-- Root logger -->
+        <AsyncRoot level="INFO">
+            <AppenderRef ref="file"/>
+            <AppenderRef ref="Console"/>
+        </AsyncRoot>
+
+    </Loggers>
+
+</Configuration>
