@@ -24,15 +24,26 @@ jobs:
           mvn -version
           java -version
 
+      - name: Validate required secrets
+        env:
+          ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
+          ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+          MULE_KEY: ${{ secrets.MULE_KEY }}
+        shell: bash
+        run: |
+          test -n "$ANYPOINT_CLIENT_ID" || { echo "Missing ANYPOINT_CLIENT_ID"; exit 1; }
+          test -n "$ANYPOINT_CLIENT_SECRET" || { echo "Missing ANYPOINT_CLIENT_SECRET"; exit 1; }
+          test -n "$MULE_KEY" || { echo "Missing MULE_KEY"; exit 1; }
+
       - name: Build and deploy to CloudHub 2.0
         env:
           ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
           ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
           MULE_KEY: ${{ secrets.MULE_KEY }}
-          MULE_ENV: ${{ secrets.SANDBOX }}
+        shell: bash
         run: |
           mvn -B clean deploy -DmuleDeploy \
-            "-Danypoint.client.id=${ANYPOINT_CLIENT_ID}" \
-            "-Danypoint.client.secret=${ANYPOINT_CLIENT_SECRET}" \
-            "-Dmule.encryptionKey=${MULE_KEY}" \
-            "-Dmule.env=${MULE_ENV}"
+            "-Danypoint.client.id=$ANYPOINT_CLIENT_ID" \
+            "-Danypoint.client.secret=$ANYPOINT_CLIENT_SECRET" \
+            "-Dmule.encryptionKey=$MULE_KEY" \
+            "-Dmule.env=Sandbox"
