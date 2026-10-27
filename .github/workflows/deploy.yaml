@@ -1,28 +1,31 @@
+
 name: Deploy to CloudHub 2.0
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # lets you run it manually from the GitHub UI
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    # Pin Maven and Java to avoid Maven Resolver API incompatibility
+    container:
+      image: maven:3.9.9-eclipse-temurin-17
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-          cache: maven
+      - name: Verify Java and Maven
+        run: |
+          mvn -version
+          java -version
 
       - name: Build and deploy to CloudHub 2.0
         run: >
           mvn -B clean deploy -DmuleDeploy
-          -Danypoint.client.id=${{ secrets.ANYPOINT_CLIENT_ID }}
-          -Danypoint.client.secret=${{ secrets.ANYPOINT_CLIENT_SECRET }}
-          -Dmule.key=${{ secrets.MULE_KEY }}
+          -Danypoint.client.id="${{ secrets.ANYPOINT_CLIENT_ID }}"
+          -Danypoint.client.secret="${{ secrets.ANYPOINT_CLIENT_SECRET }}"
+          -Dmule.key="${{ secrets.MULE_KEY }}"
