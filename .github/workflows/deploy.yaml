@@ -1,4 +1,3 @@
-
 name: Deploy to CloudHub 2.0
 
 on:
@@ -49,16 +48,13 @@ jobs:
             exit 1
           }
 
-      # 4. Create Maven settings.xml automatically
+      # 4. Create Maven settings.xml in a path Maven is told to use (-s)
+      #    NOTE: in container jobs $HOME is /github/home, but Maven reads /root/.m2,
+      #    so the file is written to the workspace and passed with -s below.
       - name: Configure Maven settings
-        env:
-          ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
-          ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
         shell: bash
         run: |
-          mkdir -p "$HOME/.m2"
-
-          cat > "$HOME/.m2/settings.xml" <<'EOF'
+          cat > "$GITHUB_WORKSPACE/settings.xml" <<'EOF'
           <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
             <servers>
               <server>
@@ -70,7 +66,16 @@ jobs:
           </settings>
           EOF
 
-      # 5. Build, run MUnit tests and deploy
+      # 5. (Optional) Confirm Maven can see the server. Remove once working.
+      - name: Verify Maven settings
+        env:
+          ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
+          ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+        shell: bash
+        run: |
+          mvn -B -s "$GITHUB_WORKSPACE/settings.xml" help:effective-settings | grep -A2 "<id>Repository</id>"
+
+      # 6. Build, run MUnit tests and deploy
       - name: Build and deploy to CloudHub 2.0
         env:
           ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
@@ -78,7 +83,7 @@ jobs:
           MULE_KEY: ${{ secrets.MULE_KEY }}
         shell: bash
         run: |
-          mvn -B clean deploy -DmuleDeploy \
+          mvn -B -s "$GITHUB_WORKSPACE/settings.xml" clean deploy -DmuleDeploy \
             "-Danypoint.client.id=$ANYPOINT_CLIENT_ID" \
             "-Danypoint.client.secret=$ANYPOINT_CLIENT_SECRET" \
             "-Dmule.encryptionKey=$MULE_KEY" \
