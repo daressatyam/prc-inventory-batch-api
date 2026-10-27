@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	
+<sub-flow name="send-critical-alert-mail-sub-flow">
+    <try doc:name="Try - Send email">
+        <email:send
+            config-ref="Email_SMTP"
+            doc:name="Send batch notification email"
+            fromAddress="${email.from}"
+            subject="#['[' ++ p('app.env') ++ '] PRC Inventory Batch - ' ++
+                (if ((vars.totalFailure default 0) == 0) 'SUCCESS'
+                 else if ((vars.totalSuccess default 0) == 0) 'CRITICAL: FAILED'
+                 else 'COMPLETED WITH ERRORS') ++
+                ' | ' ++ (vars.inboundFileName default 'N/A') ++
+                ' | ' ++ (vars.traceId default 'N/A')]">
+
+            <reconnect count="3" frequency="3000"/>
+
+            <email:to-addresses>
+                <email:to-address value="#[p('email.to.support')]"/>
+            </email:to-addresses>
+
+            <email:headers><![CDATA[#[{'X-Priority': if ((vars.totalFailure default 0) > 0) '1' else '3'}]]]>
+            </email:headers>
+        </email:send>
+
+        <error-handler>
+            <on-error-continue type="ANY">
+                <logger
+                    level="ERROR"
+                    category="com.prc.inventory.notification"
+                    message="#['Failed to send notification email. traceId=' ++ (vars.traceId default 'N/A') ++ ' error=' ++ (error.description default '')]"/>
+            </on-error-continue>
+        </error-handler>
+    </try>
+</sub-flow>
+
+</mule>
