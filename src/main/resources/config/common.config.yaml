@@ -5,9 +5,9 @@ scheduler:
   time: ""
   
 batch:
-  blockSize: "6000"
-  maxConcurrency: "4"
-  aggregatorSize: "25000"
+  blockSize: "2000"
+  maxConcurrency: "6"
+  aggregatorSize: "2000"
 
 validation:
   enum:
@@ -25,3 +25,6 @@ objectStore:
     entry: "1000"
   ttl: "48"
   expiration: "60"
+
+http:
+  port: "8081"

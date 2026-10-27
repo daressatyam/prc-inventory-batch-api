@@ -30,7 +30,12 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
     <!-- Daily scheduled execution -->
     <flow name="prc-inventory-batch-api-schedular-flow">
 
-        <scheduler doc:name="Daily Scheduler">
+        <!-- [STUDIO:"Scheduler — daily 4 AM"]<scheduler doc:name="Scheduler — daily 4 AM" doc:id="773a1fc8-c0c8-46a7-bc3b-51c4e5714078" disallowConcurrentExecution="true" >
+			<scheduling-strategy >
+				<cron expression="${scheduler.cron}" timeZone="${scheduler.timezone}" />
+			</scheduling-strategy>
+		</scheduler> [STUDIO] -->
+		<scheduler doc:name="Daily Scheduler">
             <scheduling-strategy>
                 <fixed-frequency
                     frequency="1"
