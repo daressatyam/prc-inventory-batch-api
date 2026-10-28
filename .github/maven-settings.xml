@@ -1,15 +1,20 @@
-<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
-  <interactiveMode>false</interactiveMode>
-  <servers>
-    <server>
-      <id>Repository</id>
-      <username>~~~Client~~~</username>
-      <password>${env.ANYPOINT_CLIENT_ID}~?~${env.ANYPOINT_CLIENT_SECRET}</password>
-    </server>
-    <server>
-      <id>anypoint-exchange-v3</id>
-      <username>~~~Client~~~</username>
-      <password>${env.ANYPOINT_CLIENT_ID}~?~${env.ANYPOINT_CLIENT_SECRET}</password>
-    </server>
-  </servers>
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Commit as .maven/settings.xml in the project. No secrets inside: everything comes from env vars. -->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+	<servers>
+		<!-- Publishing the app to your org's Exchange (id matches <distributionManagement>) -->
+		<server>
+			<id>anypoint-exchange</id>
+			<username>~~~Client~~~</username>
+			<password>${env.ANYPOINT_CLIENT_ID}~?~${env.ANYPOINT_CLIENT_SECRET}</password>
+		</server>
+		<!-- Downloading Exchange-hosted connectors such as mule4-sdc-connector -->
+		<server>
+			<id>anypoint-exchange-v3</id>
+			<username>~~~Client~~~</username>
+			<password>${env.ANYPOINT_CLIENT_ID}~?~${env.ANYPOINT_CLIENT_SECRET}</password>
+		</server>
+	</servers>
 </settings>
