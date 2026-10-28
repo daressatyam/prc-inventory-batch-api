@@ -1,10 +1,8 @@
-
 name: Deploy to CloudHub 2.0
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -14,130 +12,33 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: sandbox
-
-    container:
-      image: maven:3.9.9-eclipse-temurin-17
+    env:
+      ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
+      ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+      MULE_KEY: ${{ secrets.MULE_KEY }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify Java and Maven
-        run: |
-          mvn -version
-          java -version
+      - name: Set up Java 17 and Maven cache
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
 
       - name: Validate required secrets
-        shell: bash
-        env:
-          ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
-          ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
-          MULE_KEY: ${{ secrets.MULE_KEY }}
         run: |
-          set -eu
+          for v in ANYPOINT_CLIENT_ID ANYPOINT_CLIENT_SECRET MULE_KEY; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is missing"
+              exit 1
+            fi
+          done
 
-          test -n "$ANYPOINT_CLIENT_ID" || {
-            echo "::error::ANYPOINT_CLIENT_ID is missing"
-            exit 1
-          }
-
-          test -n "$ANYPOINT_CLIENT_SECRET" || {
-            echo "::error::ANYPOINT_CLIENT_SECRET is missing"
-            exit 1
-          }
-
-          test -n "$MULE_KEY" || {
-            echo "::error::MULE_KEY is missing"
-            exit 1
-          }
-
-          echo "Required deployment secrets are configured."
-
-      - name: Configure Maven settings
-        shell: bash
-        env:
-          ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
-          ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
-          MULE_REPO_USERNAME: ${{ secrets.MULE_REPO_USERNAME }}
-          MULE_REPO_PASSWORD: ${{ secrets.MULE_REPO_PASSWORD }}
-        run: |
-          set -eu
-          umask 077
-
-          SETTINGS_FILE="$GITHUB_WORKSPACE/settings.xml"
-
-          # XML-escape credentials before inserting them into XML.
-          xml_escape() {
-            local value="$1"
-            value=${value//&/&amp;}
-            value=${value//</&lt;}
-            value=${value//>/&gt;}
-            value=${value//\"/&quot;}
-            value=${value//\'/&apos;}
-            printf '%s' "$value"
-          }
-
-          CLIENT_ID_ESCAPED="$(xml_escape "$ANYPOINT_CLIENT_ID")"
-          CLIENT_SECRET_ESCAPED="$(xml_escape "$ANYPOINT_CLIENT_SECRET")"
-          REPO_USER_ESCAPED="$(xml_escape "${MULE_REPO_USERNAME:-}")"
-          REPO_PASS_ESCAPED="$(xml_escape "${MULE_REPO_PASSWORD:-}")"
-
-          cat > "$SETTINGS_FILE" <<EOF
-          <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
-            <interactiveMode>false</interactiveMode>
-            <servers>
-              <server>
-                <id>Repository</id>
-                <username>~~~Client~~~</username>
-                <password>${CLIENT_ID_ESCAPED}~?~${CLIENT_SECRET_ESCAPED}</password>
-              </server>
-          EOF
-
-          if [ -n "${MULE_REPO_USERNAME:-}" ] &&
-             [ -n "${MULE_REPO_PASSWORD:-}" ]; then
-            cat >> "$SETTINGS_FILE" <<EOF
-              <server>
-                <id>mulesoft-private</id>
-                <username>${REPO_USER_ESCAPED}</username>
-                <password>${REPO_PASS_ESCAPED}</password>
-              </server>
-          EOF
-          fi
-
-          cat >> "$SETTINGS_FILE" <<'EOF'
-            </servers>
-          </settings>
-          EOF
-
-          chmod 600 "$SETTINGS_FILE"
-          echo "Maven settings file created."
-
-      - name: Validate Maven settings XML
-        shell: bash
-        run: |
-          set -eu
-          mvn -B \
-            -s "$GITHUB_WORKSPACE/settings.xml" \
-            help:effective-settings \
-            -DshowPasswords=false \
-            -Doutput="$GITHUB_WORKSPACE/effective-settings.xml"
-
-          test -s "$GITHUB_WORKSPACE/effective-settings.xml"
-          echo "Maven settings validation completed."
-
-      - name: Build, test and deploy to CloudHub 2.0
-        shell: bash
-        env:
-          ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
-          ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
-          MULE_KEY: ${{ secrets.MULE_KEY }}
-        run: |
-          set -eu
-
-          mvn -B \
-            -s "$GITHUB_WORKSPACE/settings.xml" \
-            clean deploy \
-            -DmuleDeploy \
-            "-Danypoint.client.id=$ANYPOINT_CLIENT_ID" \
-            "-Danypoint.client.secret=$ANYPOINT_CLIENT_SECRET" \
-            "-Dmule.encryptionKey=$MULE_KEY"
+      - name: Package and deploy to CloudHub 2.0
+        run: >
+          mvn -B -s .github/maven-settings.xml
+          clean package mule:deploy
+          -DskipMunitTests
