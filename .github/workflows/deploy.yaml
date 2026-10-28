@@ -12,6 +12,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: sandbox
+    container:
+      image: maven:3.9.9-eclipse-temurin-17
     env:
       ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
       ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
@@ -21,14 +23,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java 17 and Maven cache
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
+      - name: Verify Java and Maven
+        run: |
+          mvn -version
+          java -version
 
       - name: Validate required secrets
+        shell: bash
         run: |
           for v in ANYPOINT_CLIENT_ID ANYPOINT_CLIENT_SECRET MULE_KEY; do
             if [ -z "${!v}" ]; then
