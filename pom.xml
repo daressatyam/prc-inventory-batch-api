@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
+	<!-- Must be your Anypoint ORG ID exactly (CloudHub 2.0 pulls the app from this org's Exchange) -->
 	<groupId>5f39f15b-bdae-483a-9218-a6d8f3a3522c</groupId>
 	<artifactId>prc-inventory-batch-api</artifactId>
+	<!-- Exchange won't accept the same version twice: bump this for every deploy -->
 	<version>1.0.0</version>
 	<packaging>mule-application</packaging>
 	<name>prc-inventory-batch-api</name>
@@ -10,10 +13,15 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<!-- 4.9.x = LTS. If you want 4.11.x, set releaseChannel to EDGE (4.11 has no LTS build) -->
 		<app.runtime>4.9.23</app.runtime>
+		<releaseChannel>LTS</releaseChannel>
+
 		<mule.maven.plugin.version>4.10.3</mule.maven.plugin.version>
 		<munit.version>3.7.5</munit.version>
-		<releaseChannel>LTS</releaseChannel>
+
+		<!-- Named anypoint.env (not "env") so it never clashes with ${env.X} lookups -->
 		<anypoint.env>Sandbox</anypoint.env>
 		<region>Cloudhub-US-East-2</region>
 	</properties>
@@ -37,6 +45,7 @@
 						<environment>${anypoint.env}</environment>
 						<target>${region}</target>
 						<muleVersion>${app.runtime}</muleVersion>
+						<!-- Connected App from env vars: no <server> / no personal settings.xml needed for deploy -->
 						<connectedAppClientId>${env.ANYPOINT_CLIENT_ID}</connectedAppClientId>
 						<connectedAppClientSecret>${env.ANYPOINT_CLIENT_SECRET}</connectedAppClientSecret>
 						<connectedAppGrantType>client_credentials</connectedAppGrantType>
@@ -55,6 +64,7 @@
 						</properties>
 					</cloudhub2Deployment>
 					<classifier>mule-application</classifier>
+					<!-- Needed by SFTP for ed25519 keys; remove both this and the eddsa dependency if you don't use them -->
 					<sharedLibraries>
 						<sharedLibrary>
 							<groupId>net.i2p.crypto</groupId>
@@ -82,7 +92,7 @@
 							<coverage>
 								<runCoverage>false</runCoverage>
 								<failBuild>false</failBuild>
-								<requiredApplicationCoverage>90</requiredApplicationCoverage>
+								<requiredApplicationCoverage>80</requiredApplicationCoverage>
 								<formats>
 									<format>console</format>
 									<format>sonar</format>
@@ -100,32 +110,26 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.mule.connectors</groupId>
-			<artifactId>mule-email-connector</artifactId>
-			<version>1.8.0</version>
+			<artifactId>mule-http-connector</artifactId>
+			<version>1.12.2</version>
 			<classifier>mule-plugin</classifier>
-		</dependency>
-		<dependency>
-			<groupId>org.mule.weave</groupId>
-			<artifactId>assertions</artifactId>
-			<version>1.2.1</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>net.i2p.crypto</groupId>
-			<artifactId>eddsa</artifactId>
-			<version>0.3.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.mulesoft.munit</groupId>
-			<artifactId>munit-runner</artifactId>
-			<version>${munit.version}</version>
-			<classifier>mule-plugin</classifier>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mule.connectors</groupId>
 			<artifactId>mule-sockets-connector</artifactId>
 			<version>1.2.10</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-sftp-connector</artifactId>
+			<version>2.7.4</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-email-connector</artifactId>
+			<version>1.8.0</version>
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
@@ -136,9 +140,36 @@
 		</dependency>
 		<dependency>
 			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-objectstore-connector</artifactId>
+			<version>1.3.4</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
 			<artifactId>mule-vm-connector</artifactId>
 			<version>2.0.3</version>
 			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>net.i2p.crypto</groupId>
+			<artifactId>eddsa</artifactId>
+			<version>0.3.0</version>
+		</dependency>
+		<!-- Only keep if your flows use it. It comes from Exchange (anypoint-exchange-v3), which needs credentials -->
+		<dependency>
+			<groupId>com.mulesoft.connectors</groupId>
+			<artifactId>mule4-sdc-connector</artifactId>
+			<version>1.5.1</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+
+		<!-- Test -->
+		<dependency>
+			<groupId>com.mulesoft.munit</groupId>
+			<artifactId>munit-runner</artifactId>
+			<version>${munit.version}</version>
+			<classifier>mule-plugin</classifier>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.mulesoft.munit</groupId>
@@ -148,31 +179,14 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.mule.connectors</groupId>
-			<artifactId>mule-sftp-connector</artifactId>
-			<version>2.7.4</version>
-			<classifier>mule-plugin</classifier>
-		</dependency>
-		<dependency>
-			<groupId>org.mule.connectors</groupId>
-			<artifactId>mule-objectstore-connector</artifactId>
-			<version>1.3.4</version>
-			<classifier>mule-plugin</classifier>
-		</dependency>
-		<dependency>
-			<groupId>org.mule.connectors</groupId>
-			<artifactId>mule-http-connector</artifactId>
-			<version>1.12.2</version>
-			<classifier>mule-plugin</classifier>
-		</dependency>
-		<dependency>
-			<groupId>com.mulesoft.connectors</groupId>
-			<artifactId>mule4-sdc-connector</artifactId>
-			<version>1.5.1</version>
-			<classifier>mule-plugin</classifier>
+			<groupId>org.mule.weave</groupId>
+			<artifactId>assertions</artifactId>
+			<version>1.2.1</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
+	<!-- Private org repo removed from <repositories>: nothing is downloaded from it -->
 	<repositories>
 		<repository>
 			<id>anypoint-exchange-v3</id>
@@ -186,18 +200,13 @@
 			<url>https://repository.mulesoft.org/nexus/repository/releases/</url>
 			<layout>default</layout>
 		</repository>
-		<repository>
-			<id>Repository</id>
-			<name>Private Exchange repository</name>
-			<url>https://maven.anypoint.mulesoft.com/api/v3/organizations/${project.groupId}/maven</url>
-			<layout>default</layout>
-		</repository>
 	</repositories>
 
+	<!-- Still required: CloudHub 2.0 deploys the jar from your org's Exchange -->
 	<distributionManagement>
 		<repository>
-			<id>Repository</id>
-			<name>Corporate Repository</name>
+			<id>anypoint-exchange</id>
+			<name>Anypoint Exchange (org)</name>
 			<url>https://maven.anypoint.mulesoft.com/api/v3/organizations/${project.groupId}/maven</url>
 			<layout>default</layout>
 		</repository>
