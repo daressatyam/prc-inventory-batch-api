@@ -1,0 +1,30 @@
+scheduler:
+  cron: "0 0 4 * * ?"
+  timezone: "America/New_York"
+  enabled: "true"
+  time: ""
+  
+batch:
+  blockSize: "6000"
+  maxConcurrency: "4"
+  aggregatorSize: "25000"
+
+validation:
+  enum:
+    Standard: "Standard"
+    Backorder: "Backorder"
+    
+file:
+  format: ".csv"
+  prefix: "inventory_"
+  errorFile: "inventory_error_file_"
+  errorHeaders: "traceId,errorType,errorMessage\n"
+  
+objectStore:
+  max:
+    entry: "1000"
+  ttl: "48"
+  expiration: "60"
+
+http:
+  port: "8081"  

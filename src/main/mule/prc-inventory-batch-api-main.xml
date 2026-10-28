@@ -192,5 +192,28 @@ payload
             message="Inventory batch job processing completed"/>
 
     </sub-flow>
-
+<flow name="health-check-flow">
+ 
+    <http:listener
+        config-ref="HTTP_Listener_config"
+        path="/health"
+        allowedMethods="GET"
+        doc:name="Health Check GET"/>
+ 
+    <ee:transform doc:name="Build Health Response">
+        <ee:message>
+            <ee:set-payload><![CDATA[
+%dw 2.0
+output application/json
+---
+{
+    status: "UP",
+    application: app.name,
+    timestamp: now()
+}
+            ]]></ee:set-payload>
+        </ee:message>
+    </ee:transform>
+ 
+</flow>
 </mule>

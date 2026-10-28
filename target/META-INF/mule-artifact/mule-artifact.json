@@ -1,0 +1,48 @@
+{
+  "configs": [
+    "global.xml",
+    "outbound-connectors.xml",
+    "implementation-batch-process.xml",
+    "alert-notification.xml",
+    "prc-inventory-batch-api-main.xml",
+    "global-error-handling.xml",
+    "inbound-connectors.xml"
+  ],
+  "secureProperties": [],
+  "supportedJavaVersions": [],
+  "redeploymentEnabled": true,
+  "name": "f39f15b-bdae-483a-9218-a6d8f3a3522c:prc-inventory-batch-api:1.0.0",
+  "minMuleVersion": "4.8.10",
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedPackages": [],
+      "exportedResources": [
+        "log4j2.xml",
+        "global.xml",
+        "global-error-handling.xml",
+        "outbound-connectors.xml",
+        "config/config.Sandbox.yaml",
+        "config/common.config.yaml",
+        "config/config.local.yaml",
+        "config/config.dev.yaml",
+        "inbound-connectors.xml",
+        "application-types.xml",
+        "implementation-batch-process.xml",
+        "alert-notification.xml",
+        "secureConfig/secure.config.local.yaml",
+        "secureConfig/secure.config.dev.yaml",
+        "secureConfig/secure.config.Sandbox.yaml",
+        "prc-inventory-batch-api-main.xml"
+      ]
+    }
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule",
+    "attributes": {}
+  },
+  "javaSpecificationVersions": [
+    "17"
+  ]
+}

@@ -22,7 +22,7 @@ output application/java
 				</ee:message>
 			</ee:transform>
 			<logger level="ERROR" doc:name="LOGERROR: INBOUND_FILE_NOT_FOUND" doc:id="97b3dd12-1f89-4000-a8fa-89053d6d3fc2" message="#[payload]"/>
-			<flow-ref doc:name="publish-error-message-to-vm" doc:id="3265b1a1-c150-46f0-82c5-c6f42acfc281" name="publish-error-message"/>
+			<flow-ref doc:name="publish-error-message" doc:id="3265b1a1-c150-46f0-82c5-c6f42acfc281" name="publish-error-message"/>
 			<flow-ref doc:name="delete-error-folder-outbound-sftp" doc:id="3a1473df-5720-494e-abe8-cc8cf0dfbbb2" name="delete-error-folder-outbound-sftp" />
 		</on-error-propagate>
 		<on-error-propagate enableNotifications="true" logException="true" doc:name="SFTP connectivity" doc:id="0cadda08-319f-4d16-8819-777480f18f40" type="SFTP:CONNECTIVITY, SFTP:CONNECTION_TIMEOUT" >
@@ -41,7 +41,7 @@ output application/java
 				</ee:message>
 			</ee:transform>
 			<logger level="ERROR" doc:name="LOGERROR: SFTP_RETRY_EXHAUSTED" doc:id="795f1a44-c908-42a0-b8d3-6fdd114f72cc" message="#[payload]" />
-			<flow-ref doc:name="publish-error-message-to-vm" doc:id="c62565c9-eb49-430b-8494-087065757370" name="publish-error-message" />
+			<flow-ref doc:name="publish-error-message" doc:id="c62565c9-eb49-430b-8494-087065757370" name="publish-error-message" />
 			<flow-ref doc:name="delete-error-folder-outbound-sftp" doc:id="a641546d-dd99-45b8-b1bd-ef3b656f4bf9" name="delete-error-folder-outbound-sftp" />
 		</on-error-propagate>
 		<on-error-propagate enableNotifications="true" logException="true" doc:name="SFTP connectivity1" doc:id="9885fb31-94c6-4fd7-a737-85e6847aa431" type="ANY" >
@@ -60,7 +60,7 @@ output application/java
 				</ee:message>
 			</ee:transform>
 			<logger level="ERROR" doc:name="LOGERROR: SFTP_RUNTIME_ERROR" doc:id="537bcd29-cbad-46e9-94eb-340e0a9b80b8" message="#[payload]" />
-			<flow-ref doc:name="publish-error-message-to-vm" doc:id="8d13876c-3d29-4b2e-b32b-cc715b262ee0" name="publish-error-message" />
+			<flow-ref doc:name="publish-error-message" doc:id="8d13876c-3d29-4b2e-b32b-cc715b262ee0" name="publish-error-message" />
 			<flow-ref doc:name="delete-error-folder-outbound-sftp" doc:id="7ff3ea1b-dd94-468e-9125-64473209c408" name="delete-error-folder-outbound-sftp" />
 		</on-error-propagate>
 	</error-handler>

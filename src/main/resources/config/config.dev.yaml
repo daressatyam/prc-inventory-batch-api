@@ -3,7 +3,7 @@ SFTP:
   port: "22"
   username: "satyam"
   certificate:
-    path: "/Users/satyam/.ssh/id_rsa_mule"
+    path: "/Users/satyam/.ssh/id_rsa_mule_nopass"
     passphrase: "mule"
   wmssftp:
     path: "/Users/satyam/sftp-root/WMSinbound/"
@@ -16,7 +16,7 @@ SFTP:
     path: "/Users/satyam/sftp-root/errorMessage/"
 
 app:
-  env: "Dev"
+  env: "Local"
 
 email:
   smtp:

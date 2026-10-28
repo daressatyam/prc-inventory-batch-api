@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:sdc="http://www.mulesoft.org/schema/mule/sdc" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
-	xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
-	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
 http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
-http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
-http://www.mulesoft.org/schema/mule/sdc http://www.mulesoft.org/schema/mule/sdc/current/mule-sdc.xsd">
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
 	<flow name="inventory-batch-processing-flow" doc:id="d13bec28-4cfd-4c68-abb1-1a55b4ba785f" >
 		<batch:job jobName="prc-inventory-batch-process" doc:id="1d0a0aab-8af8-4551-8740-199dc0fe5737" blockSize="${batch.blockSize}" maxConcurrency="${batch.maxConcurrency}">
 			<batch:process-records >
@@ -94,6 +93,7 @@ vars.errorFileName]]></ee:set-variable>
 			</batch:on-complete>
 		</batch:job>
 	</flow>
+	
 	<sub-flow name="batch-process-on-complete-phase" doc:id="0c241885-b020-463e-b620-a53f611bb5cc" >
 		<ee:transform doc:name="batch result" doc:id="694fb3ed-0c87-4580-8143-85c2c1b6645b" >
 			<ee:message />
@@ -203,7 +203,6 @@ var errorRow = if (vars.errorFileName != null)
 ++ "(Automated message. Please do not reply.)"]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
-				<!-- [STUDIO:"Publish error messages"]<vm:publish queueName="alertMail" doc:name="Publish error messages" doc:id="afae336f-f173-4343-864d-cd70c57e9abf" config-ref="VM_Config" correlationId="#[vars.traceId&#93;" timeout="20"/> [STUDIO] -->
 				<flow-ref doc:name="send-critical-alert-mail-sub-flow" doc:id="d943bf27-6339-42ca-bb4e-9dbd569304f5" name="send-critical-alert-mail-sub-flow" />
 			</when>
 			<otherwise >
@@ -271,7 +270,6 @@ var archivedRow = if (vars.inboundFileName != null)
 ++ "(Automated message. Please do not reply.)"]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
-				<!-- [STUDIO:"Publish error messages"]<vm:publish queueName="alertMail" doc:name="Publish error messages" doc:id="6d23b004-0994-4721-a0b5-0c45d4e2f284" config-ref="VM_Config" correlationId="#[vars.traceId&#93;" timeout="20" /> [STUDIO] -->
 				<flow-ref doc:name="send-critical-alert-mail-sub-flow" doc:id="5fadfee6-30d0-4ea8-b987-33aed54e26da" name="send-critical-alert-mail-sub-flow" />
 			</otherwise>
 		</choice>

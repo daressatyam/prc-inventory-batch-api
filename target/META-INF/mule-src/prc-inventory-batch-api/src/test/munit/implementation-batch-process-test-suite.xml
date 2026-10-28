@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+	xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config
+		name="implementation-batch-process-test-suite.xml" />
+	<munit:test name="batch-process-test-flow-with-invalid-data"
+		doc:id="8bf62af2-7dfb-4e96-9604-6e28ca5c6079">
+		<munit:behavior>
+			<munit-tools:mock-when
+				doc:name="mock object store (contains)"
+				doc:id="7714ab2f-7d9b-4c8a-a29a-7959da369803"
+				processor="os:contains">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute
+						whereValue="Check for headers" attributeName="doc:name" />
+					<munit-tools:with-attribute
+						whereValue="Object_store" attributeName="objectStore" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when
+				doc:name="mock outbound sftp (create)"
+				doc:id="6cfab87a-88c1-4171-8981-e0c2269bf476" processor="sftp:write">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute
+						whereValue="Create outbound file with headers"
+						attributeName="doc:name" />
+					<munit-tools:with-attribute
+						whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when
+				doc:name="mock outbound sftp (append)"
+				doc:id="80e34522-0de6-4c03-8623-be28d30324d0" processor="sftp:write">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute
+						whereValue="update error messages in outbound sftp"
+						attributeName="doc:name" />
+					<munit-tools:with-attribute
+						whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when
+				doc:name="mock outbound error sftp (errorPaylod)"
+				doc:id="4bc1fd8f-e949-4f26-b640-bd9a0c886fa2" processor="sftp:write">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute
+						whereValue="create headers for the error records"
+						attributeName="doc:name" />
+					<munit-tools:with-attribute
+						whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when
+				doc:name="mock outbound error sftp (read)"
+				doc:id="3b645a22-ae5e-42af-8734-bc13295adef1" processor="sftp:read">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute
+						whereValue="Read error file" attributeName="doc:name" />
+					<munit-tools:with-attribute
+						whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/json --- [{SKU: 'SKU001', StoreId: 'STORE01', 'Type': 'Standard', Quantity: '10', Timestamp: '2026-03-24'},{SKU: 'SKU001', StoreId: 'STORE01', 'Type': 'new', Quantity: '10', Timestamp: '2026-03-24'}]]" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when
+				doc:name="mock email alert (alert)"
+				doc:id="4a12a051-67bf-43b3-83ec-6db3848a39a6" processor="email:send">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute
+						whereValue="Send alert mail to backend support team"
+						attributeName="doc:name" />
+					<munit-tools:with-attribute
+						whereValue="Email_SMTP" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when
+				doc:name="mock email alert (critical)"
+				doc:id="2538b5f5-983b-4b42-91b1-2e8a16997342" processor="email:send">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute
+						whereValue="Send critical alert mail to backend support team"
+						attributeName="doc:name" />
+					<munit-tools:with-attribute
+						whereValue="Email_SMTP" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when
+				doc:name="mock delete outbound error sftp (delete)"
+				doc:id="99692bb5-8c94-4e6b-b4ab-d6a30c1d4e20"
+				processor="sftp:delete">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute
+						whereValue="Delete error file" attributeName="doc:name" />
+					<munit-tools:with-attribute
+						whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock object store (set headers)" doc:id="83057c62-9490-49e5-a26e-3df8cd15d51c" processor="os:store" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="set header applied" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="Object_store" attributeName="objectStore" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock vm queue" doc:id="c4f44e5a-3138-45ea-b9f4-3c591a9fcf55" processor="vm:publish">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="alertMail" attributeName="queueName" />
+					<munit-tools:with-attribute whereValue="Publish error messages" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution>
+			<munit:set-event doc:name="Set Event"
+				doc:id="f81a94e2-05dd-4940-9c50-051a5e0562e8">
+				<munit:payload value="#[output application/json --- [{SKU: 'SKU001', StoreId: 'STORE01', 'Type': 'Standard', Quantity: '10', Timestamp: '2026-03-24'},{SKU: 'SKU001', StoreId: 'STORE01', 'Type': 'new', Quantity: '10', Timestamp: '2026-03-24'}]]" mediaType="application/json" />
+				<munit:variables >
+					<munit:variable key="traceId" value="test-trace-123" />
+					<munit:variable key="headerExists" value="true" />
+					<munit:variable key="jobDate" value="24-03-2026" />
+					<munit:variable key="inboundFileName" value="full_inventory_03-24-2026" />
+					<munit:variable key="errorFileName" value="/test/error/24-03-2026/inventory_error_file_24-03-2026.csv" />
+					<munit:variable key="errorFolderName" value="/test/error/24-03-2026" />
+				</munit:variables>
+			</munit:set-event>
+			<flow-ref doc:name="inventory-batch-processing-flow"
+				doc:id="9efb90f7-2b26-415e-baca-14aaa056e295"
+				name="inventory-batch-processing-flow" />
+			<munit-tools:sleep time="20" doc:name="Sleep"
+				doc:id="9658073c-f38e-4b68-903c-c6d4025f1a82" timeUnit="SECONDS" />
+		</munit:execution>
+		<munit:validation>
+			<munit-tools:verify-call
+				doc:name="Verify call create outbound sftp file"
+				doc:id="25541f47-6fe0-4bba-947b-7f87f054d178" processor="sftp:write">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute
+						whereValue="append the inventory data" attributeName="doc:name" />
+					<munit-tools:with-attribute
+						whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="batch-process-test-flow" doc:id="4f95ba0c-037c-425f-b431-37d9781b8640" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="mock object store (contains)" doc:id="9a038c46-8bf6-44b3-bf28-2ee506b23f9b" processor="os:contains" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Check for headers" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="Object_store" attributeName="objectStore" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock outbound sftp (create)" doc:id="f472e03a-5ae3-4b40-b841-1bb20f4359b7" processor="sftp:write" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Create outbound file with headers" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock outbound sftp (append)" doc:id="cd0808c9-f1b7-4835-a0e8-c3ce37cf456e" processor="sftp:write" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="update error messages in outbound sftp" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock outbound error sftp (errorPaylod)" doc:id="d3a81986-9a25-4865-8a16-562108e8c46d" processor="sftp:write" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="create headers for the error records" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock outbound error sftp (read)" doc:id="67c9aa2e-17e1-4c55-a7ba-450af76d6931" processor="sftp:read" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Read error file" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[[]]" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock email alert (alert)" doc:id="dc0ee946-06d4-4b7e-ac50-57adafd5028e" processor="email:send" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Send alert mail to backend support team" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="Email_SMTP" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock email alert (critical)" doc:id="536cc129-d4db-405b-aa63-709907b4a27b" processor="email:send" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Send critical alert mail to backend support team" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="Email_SMTP" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock delete outbound error sftp (delete)" doc:id="a03f638a-9884-4843-b7b8-e87c5b2f3852" processor="sftp:delete" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Delete error file" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock object store (set headers)" doc:id="6b488d8a-a7d3-49d4-a3e8-10d2b5018999" processor="os:store" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="set header applied" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="Object_store" attributeName="objectStore" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="mock vm queue" doc:id="5ef72cbf-5c53-4fd5-a1db-c175b98d6e04" processor="vm:publish" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="alertMail" attributeName="queueName" />
+					<munit-tools:with-attribute whereValue="Publish error messages" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="f41bb508-66b9-4dcd-87a9-a634e53e6ab9" >
+				<munit:payload value="#[output application/json --- [{SKU: 'SKU001', StoreId: 'STORE01', 'Type': 'Standard', Quantity: '10', Timestamp: '2026-03-24'}]]" mediaType="application/json" />
+				<munit:variables >
+					<munit:variable key="traceId" value="test-trace-123" />
+					<munit:variable key="headerExists" value="true" />
+					<munit:variable key="jobDate" value="24-03-2026" />
+					<munit:variable key="inboundFileName" value="full_inventory_03-24-2026" />
+					<munit:variable key="errorFileName" value="/test/error/24-03-2026/inventory_error_file_24-03-2026.csv" />
+					<munit:variable key="errorFolderName" value="/test/error/24-03-2026" />
+				</munit:variables>
+			</munit:set-event>
+			<flow-ref doc:name="inventory-batch-processing-flow" doc:id="0fd77b5a-2aae-4c93-8f24-e337dee20f55" name="inventory-batch-processing-flow" />
+			<munit-tools:sleep time="20" doc:name="Sleep" doc:id="45dbe656-21fa-464b-a11c-9dda1ef48f38" timeUnit="SECONDS" />
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Verify call create outbound sftp file" doc:id="3a254b20-27f3-4c02-bd33-6c0740dd6692" processor="sftp:write" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="append the inventory data" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+
+</mule>

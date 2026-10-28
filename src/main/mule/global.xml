@@ -9,11 +9,8 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
 http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
 http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
 	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="3c3d5292-8525-4a07-815f-2e4e18a5dbde" >
-		<sftp:connection host="${SFTP.host}" port="${SFTP.port}" username="${SFTP.username}" connectionTimeout="30" responseTimeout="60" identityFile="${SFTP.certificate.path}" passphrase="${SFTP.certificate.passphrase}">
-			<reconnection >
-				<reconnect blocking="false" />
-			</reconnection>
-			<pooling-profile maxActive="10" maxIdle="4" maxWait="30000"/>
+		<sftp:connection host="${SFTP.host}" port="${SFTP.port}" username="${SFTP.username}" connectionTimeout="30" responseTimeout="60" identityFile="${SFTP.certificate.path}" knownHostsFile="/Users/satyam/mule-sftp/keys/known_hosts">
+			<pooling-profile maxActive="8" maxIdle="4" maxWait="30000"/>
 		</sftp:connection>
 	</sftp:config>
 	<configuration-properties doc:name="Configuration properties" doc:id="a87d4ca7-2ee0-47da-ac22-176bdb9be19d" file="config/config.${mule.env}.yaml" />

@@ -1,0 +1,28 @@
+SFTP:
+  host: "localhost"
+  port: "22"
+  username: "satyam"
+  certificate:
+    path: "/Users/satyam/.ssh/id_rsa_mule_nopass"
+    passphrase: "mule"
+  wmssftp:
+    path: "/Users/satyam/sftp-root/WMSinbound/"
+    fileNamePattern: "full_inventory_"
+    target:
+      path: "/Users/satyam/sftp-root/WMSinbound/Archive/"
+  sfccsftp:
+    path: "/Users/satyam/sftp-root/SFCCoutbound/"
+  errorsftp:
+    path: "/Users/satyam/sftp-root/errorMessage/"
+
+app:
+  env: "Local"
+
+email:
+  smtp:
+    host: "smtp.gmail.com"
+    port: "587"
+    username: "satyamsinghdares@gmail.com"
+  from: "satyamsinghdares@gmail.com"
+  to:
+    support: "daressatyamsingh@gmail.com"
