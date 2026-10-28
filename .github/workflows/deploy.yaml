@@ -19,6 +19,8 @@ jobs:
       ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
       MULE_KEY: ${{ secrets.MULE_KEY }}
       MAVEN_SETTINGS: .github/maven-settings.xml
+      ORG_ID: 5f39f15b-bdae-483a-9218-a6d8f3a3522c
+      ASSET_ID: prc-inventory-batch-api
       # Exchange won't accept re-publishing the same version, so each run gets a unique one
       APP_VERSION: 1.0.${{ github.run_number }}
 
@@ -59,13 +61,55 @@ jobs:
           -DnewVersion="$APP_VERSION"
           -DgenerateBackupPoms=false
 
-      - name: Publish to Exchange and deploy to CloudHub 2.0
+      # Step 1: build and publish to Exchange only (no CloudHub deployment yet)
+      - name: Publish to Exchange
         run: >
           mvn -B -s "$MAVEN_SETTINGS"
-          clean deploy -DmuleDeploy
+          clean deploy
+          -DskipMunitTests
+
+      # Step 2: confirm Exchange actually has the asset before asking CloudHub to pull it
+      - name: Wait for asset in Exchange
+        shell: bash
+        run: |
+          TOKEN=$(curl -s -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
+            -H "Content-Type: application/json" \
+            -d "{\"client_id\":\"$ANYPOINT_CLIENT_ID\",\"client_secret\":\"$ANYPOINT_CLIENT_SECRET\",\"grant_type\":\"client_credentials\"}" \
+            | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Could not get an access token with the Connected App credentials"
+            exit 1
+          fi
+
+          URL="https://anypoint.mulesoft.com/exchange/api/v2/assets/$ORG_ID/$ASSET_ID/$APP_VERSION"
+          for i in $(seq 1 24); do
+            CODE=$(curl -s -o /tmp/asset.json -w "%{http_code}" -H "Authorization: Bearer $TOKEN" "$URL")
+            echo "Attempt $i: Exchange returned HTTP $CODE"
+            if [ "$CODE" = "200" ]; then
+              echo "Asset $ORG_ID:$ASSET_ID:$APP_VERSION is available in Exchange"
+              exit 0
+            fi
+            if [ "$CODE" = "401" ] || [ "$CODE" = "403" ]; then
+              echo "::error::Connected App can't read Exchange (HTTP $CODE). Add the Exchange Viewer/Contributor scope on business group $ORG_ID."
+              cat /tmp/asset.json
+              exit 1
+            fi
+            sleep 5
+          done
+
+          echo "::error::Asset $ORG_ID:$ASSET_ID:$APP_VERSION never appeared in Exchange. Check the 'Publish to Exchange' step log for the upload."
+          cat /tmp/asset.json
+          exit 1
+
+      # Step 3: deploy the published asset to CloudHub 2.0 (target/ from step 1 is reused, no rebuild)
+      - name: Deploy to CloudHub 2.0
+        run: >
+          mvn -B -s "$MAVEN_SETTINGS"
+          mule:deploy
           -DskipMunitTests
 
       - name: Summary
         if: success()
         run: |
-          echo "Deployed prc-inventory-batch-api version $APP_VERSION to CloudHub 2.0 (Sandbox)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Deployed $ASSET_ID version $APP_VERSION to CloudHub 2.0 (Sandbox)" >> "$GITHUB_STEP_SUMMARY"
