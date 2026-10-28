@@ -18,17 +18,27 @@ jobs:
       ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
       ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
       MULE_KEY: ${{ secrets.MULE_KEY }}
+      MAVEN_SETTINGS: .github/maven-settings.xml
+      # Exchange won't accept re-publishing the same version, so each run gets a unique one
+      APP_VERSION: 1.0.${{ github.run_number }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Cache Maven repository
+        uses: actions/cache@v4
+        with:
+          path: /root/.m2/repository
+          key: maven-${{ hashFiles('pom.xml') }}
+          restore-keys: maven-
 
       - name: Verify Java and Maven
         run: |
           mvn -version
           java -version
 
-      - name: Validate required secrets
+      - name: Validate required secrets and settings file
         shell: bash
         run: |
           for v in ANYPOINT_CLIENT_ID ANYPOINT_CLIENT_SECRET MULE_KEY; do
@@ -37,9 +47,25 @@ jobs:
               exit 1
             fi
           done
+          if [ ! -f "$MAVEN_SETTINGS" ]; then
+            echo "::error::Maven settings file not found at $MAVEN_SETTINGS"
+            exit 1
+          fi
 
-      - name: Package and deploy to CloudHub 2.0
+      - name: Set application version
         run: >
-          mvn -B -s .github/maven-settings.xml
-          clean package mule:deploy
+          mvn -B -s "$MAVEN_SETTINGS"
+          versions:set
+          -DnewVersion="$APP_VERSION"
+          -DgenerateBackupPoms=false
+
+      - name: Publish to Exchange and deploy to CloudHub 2.0
+        run: >
+          mvn -B -s "$MAVEN_SETTINGS"
+          clean deploy -DmuleDeploy
           -DskipMunitTests
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "Deployed prc-inventory-batch-api version $APP_VERSION to CloudHub 2.0 (Sandbox)" >> "$GITHUB_STEP_SUMMARY"
