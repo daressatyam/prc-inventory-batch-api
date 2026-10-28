@@ -2,26 +2,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<!-- Must be your Anypoint ORG ID exactly (CloudHub 2.0 pulls the app from this org's Exchange) -->
 	<groupId>5f39f15b-bdae-483a-9218-a6d8f3a3522c</groupId>
 	<artifactId>prc-inventory-batch-api</artifactId>
-	<!-- Exchange won't accept the same version twice: bump this for every deploy -->
-	<version>1.0.0</version>
+	<version>1.0.2</version>
 	<packaging>mule-application</packaging>
 	<name>prc-inventory-batch-api</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-		<!-- 4.9.x = LTS. If you want 4.11.x, set releaseChannel to EDGE (4.11 has no LTS build) -->
 		<app.runtime>4.9.23</app.runtime>
 		<releaseChannel>LTS</releaseChannel>
 
 		<mule.maven.plugin.version>4.10.3</mule.maven.plugin.version>
 		<munit.version>3.7.5</munit.version>
-
-		<!-- Named anypoint.env (not "env") so it never clashes with ${env.X} lookups -->
 		<anypoint.env>Sandbox</anypoint.env>
 		<region>Cloudhub-US-East-2</region>
 	</properties>
@@ -45,7 +39,6 @@
 						<environment>${anypoint.env}</environment>
 						<target>${region}</target>
 						<muleVersion>${app.runtime}</muleVersion>
-						<!-- Connected App from env vars: no <server> / no personal settings.xml needed for deploy -->
 						<connectedAppClientId>${env.ANYPOINT_CLIENT_ID}</connectedAppClientId>
 						<connectedAppClientSecret>${env.ANYPOINT_CLIENT_SECRET}</connectedAppClientSecret>
 						<connectedAppGrantType>client_credentials</connectedAppGrantType>
@@ -155,7 +148,6 @@
 			<artifactId>eddsa</artifactId>
 			<version>0.3.0</version>
 		</dependency>
-		<!-- Only keep if your flows use it. It comes from Exchange (anypoint-exchange-v3), which needs credentials -->
 		<dependency>
 			<groupId>com.mulesoft.connectors</groupId>
 			<artifactId>mule4-sdc-connector</artifactId>
@@ -185,8 +177,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
-	<!-- Private org repo removed from <repositories>: nothing is downloaded from it -->
 	<repositories>
 		<repository>
 			<id>anypoint-exchange-v3</id>
@@ -202,7 +192,6 @@
 		</repository>
 	</repositories>
 
-	<!-- Still required: CloudHub 2.0 deploys the jar from your org's Exchange -->
 	<distributionManagement>
 		<repository>
 			<id>anypoint-exchange</id>
